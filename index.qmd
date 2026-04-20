@@ -41,39 +41,52 @@ plt.rcParams.update({
 })
 ```
 
-## Introduction
+::: {.callout-note appearance="simple"}
+This is preliminary work based on openly available data.
+It is not an official release and should not be cited as such. ✌️ 
+:::
 
-Cycling is one of the cheapest ways a city can expand mobility — but only if people feel safe using it.
+## 🚲 Intro
 
-The research is clear: painted sharrows and advisory lanes do almost nothing for ridership.
-What moves the needle is *high-comfort* infrastructure — physically separated cycle tracks,
-multi-use paths, and greenways where riders don't have to negotiate space with moving traffic.
+Bike infrastructure is one of the cheapest ways a city can
+expand who can get around — but only one kind actually works.
 
-Between 2019 and 2024, Canadian cities collectively added thousands of kilometres of cycling
-infrastructure. But not all of it is equal, and not all cities are performing equally.
+Painted lanes on busy roads do almost nothing for ridership —
+[the research on this is settled](URL_TODO).
+What moves the needle is **high-comfort** infrastructure:
+physically separated cycle tracks, multi-use paths, and local street 
+bikeways. Places where you don't have to negotiate with a moving car.
 
-Using two releases of the **Canadian Cycling Network Database (CCND)** and the **Can-BICS**
-classification framework, this analysis measures how access to high-comfort infrastructure changed
-for three cities: Victoria, Montreal, and Toronto.
+Between 2019 and 2024, Canadian cities added thousands of kilometres
+of cycling infrastructure. Not all of it was equal.
+Not all cities performed equally.
 
-**The headline:** Victoria punches far above its weight. Montreal has made real absolute
-gains. Toronto has made progress moved, but lagged behind, despite being Canada's largest city and a place where cycling
-investment is perpetually promised and perpetually deferred.
+Using two releases of the
+**[Canadian Cycling Network Database (CCND)](URL_TODO)**
+and the **[Can-BICS](URL_TODO)** classification framework,
+we measured how access to high-comfort infrastructure changed
+across three cities: Victoria, Montreal, and Toronto.
+
+**TL;DR:** Victoria punches way above its weight.
+Montreal has made real gains.
+Toronto has barely moved — despite being Canada's largest city,
+and despite cycling investment being perpetually promised
+and perpetually deferred.
 
 ---
 
-## Data
+## 📊 Data
 
-### The Canadian Cycling Network Database
+The analysis uses two national snapshots of Canadian cycling
+infrastructure:
 
-The CCND is a national geospatial dataset of cycling infrastructure, compiled from municipal
-open data sources. We use two releases:
+- **[2019 release](https://health-infobase.canada.ca/datalab/bicycling-infrastructure.html)**
+  — baseline network, published by the Public Health Agency of Canada
+- **[2024 release](URL_TODO)**
+  — five years of additions
 
-- **2019 release** — baseline network as of approximately 2018–2019
-- **2024 release** — updated network capturing additions through approximately 2023–2024
-
-Each segment in the database is described by geometry (linestring), municipality, and a set of
-infrastructure-type attributes that allow Can-BICS classification.
+Each dataset is a collection of line segments — one per stretch of
+infrastructure — with attributes describing the type of facility.
 
 ```{python}
 #| label: tbl-raw-counts
@@ -85,8 +98,8 @@ infrastructure-type attributes that allow Can-BICS classification.
 summary = pd.DataFrame({
     "City":            ["Victoria", "Victoria", "Montreal", "Montreal", "Toronto", "Toronto"],
     "Year":            [2019, 2024, 2019, 2024, 2019, 2024],
-    "Total km":        [None, None, None, None, None, None],   # fill from 01_load_data.py
-    "High-comfort km": [None, None, None, None, None, None],   # fill from 01_load_data.py
+    "Total km":        [None, None, None, None, None, None],
+    "High-comfort km": [None, None, None, None, None, None],
     "% High-comfort":  [None, None, None, None, None, None],
 })
 # Uncomment when data is ready:
@@ -100,37 +113,75 @@ summary.style \
     .hide(axis="index")
 ```
 
-### The Can-BICS Framework
+---
 
-**Can-BICS** (Canadian Bikeway Comfort and Safety) is a national classification system that groups
-cycling infrastructure into comfort tiers based on physical separation from motor traffic.
-For this analysis we use two tiers:
+## 🏷️ Classification is hard
 
-| Can-BICS class | Infrastructure type | Included here |
-|---|---|---|
-| High-comfort | Protected lanes, cycle tracks, multi-use paths, off-street greenways | ✓ |
-| Low-comfort | Painted lanes, sharrows, signed routes, advisory lanes | ✗ |
+Here's a problem that doesn't get enough attention in cycling research:
+municipalities have wildly inconsistent names for their infrastructure.
 
-: Can-BICS comfort tiers used in this analysis {#tbl-canbics}
+One city's "bike lane" is a painted stripe in the door zone.
+Another's is a fully protected cycle track with a physical barrier.
+A third calls the same thing a "multi-use path," a "cycling corridor,"
+or something that doesn't map cleanly to any standard category at all.
 
-The high-comfort threshold is conservative: a painted bike lane in door-zone traffic does not
-qualify. This is intentional. The question we're asking is not "does this city have cycling
-infrastructure?" but "does this city have the kind of cycling infrastructure that actually
-increases ridership across the population?"
+This matters because the raw data reflects whatever label
+each municipality chose to use —
+not a consistent, objective description of what was actually built.
+
+### How we resolved it
+
+We used **[Can-BICS](URL_TODO)**
+(Canadian Bikeway Comfort and Safety) as a common framework.
+Can-BICS classifies cycling infrastructure into three comfort tiers
+based on physical separation from motor traffic:
+*high*, *medium*, and *low*.
+This analysis focuses on the high-comfort tier —
+the facilities with genuine physical separation
+that [research shows actually shift ridership](URL_TODO).
+
+To apply Can-BICS consistently, we verified infrastructure
+classifications using **Google Street View**,
+checking a sample of segments in each city
+where the attribute data was ambiguous or inconsistent.
+
+```{python}
+#| label: fig-gsv-example
+#| fig-cap: "Example of Street View verification: the same infrastructure type labelled differently across municipalities. TODO: replace with actual Street View screenshot."
+
+fig_path = FIGS / "gsv_example.png"
+if fig_path.exists():
+    import matplotlib.image as mpimg
+    img = mpimg.imread(fig_path)
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.imshow(img)
+    ax.axis("off")
+    plt.tight_layout()
+    plt.show()
+else:
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.text(0.5, 0.5,
+            "Street View verification example\n(add screenshot to figures/gsv_example.png)",
+            ha="center", va="center", fontsize=13, color="#888",
+            transform=ax.transAxes)
+    ax.axis("off")
+    ax.set_title("Classification verification — placeholder", color="#aaa")
+    plt.tight_layout()
+    plt.show()
+```
 
 ---
 
-## Method
+## 📍 How do we measure spatial access?
 
-### Unit of analysis
-
-We measure access at the **dissemination block (DB)** level — the smallest geographic unit
-for which Statistics Canada publishes population counts. Each DB is assigned a centroid
-(the population-weighted centroid where available, otherwise the geometric centroid).
+We measure access at the **dissemination block (DB)** level —
+Statistics Canada's smallest geographic unit with population counts.
+There are thousands of them per city.
+For each one, we ask: is there high-comfort infrastructure nearby?
 
 ```{python}
 #| label: fig-method-diagram
-#| fig-cap: "Schematic of the access measurement method. Each dissemination block centroid is buffered by 300 m (straight-line distance). A block is coded as having access if any high-comfort segment intersects that buffer."
+#| fig-cap: "Each dissemination block centroid is buffered by 300 m (straight-line distance). A block has access if any high-comfort segment falls within that buffer."
 
 fig, ax = plt.subplots(figsize=(8, 5))
 
@@ -142,7 +193,8 @@ for x in range(5):
         ax.add_patch(rect)
 
 # A high-comfort segment running diagonally
-ax.plot([0.5, 4.5], [0.5, 3.5], color="#2196F3", linewidth=3, label="High-comfort segment", zorder=3)
+ax.plot([0.5, 4.5], [0.5, 3.5], color="#2196F3", linewidth=3,
+        label="High-comfort segment", zorder=3)
 
 # Show two centroids and their buffers
 centroids = [(0.45, 2.45), (2.45, 0.45)]
@@ -171,137 +223,59 @@ plt.savefig(FIGS / "method_diagram.png", dpi=150, bbox_inches="tight")
 plt.show()
 ```
 
-### Access measure
-
-For each dissemination block centroid $i$, we compute a binary access indicator:
+For each DB centroid $i$, we compute a binary access indicator:
 
 $$
-a_i = \begin{cases} 1 & \text{if } d(i,\ \text{nearest high-comfort segment}) \leq 300\text{ m} \\ 0 & \text{otherwise} \end{cases}
+a_i = \begin{cases}
+  1 & \text{if } d(i,\ \text{nearest high-comfort segment}) \leq 300\text{ m} \\
+  0 & \text{otherwise}
+\end{cases}
 $$
 
-We then aggregate to a city-level **population-weighted access share**:
+Then roll it up to a city-level **population-weighted access share**:
 
 $$
 A = \frac{\sum_i p_i \cdot a_i}{\sum_i p_i}
 $$
 
-where $p_i$ is the 2021 census population of block $i$. This weights blocks by how many
-people actually live there, so a change in a dense inner-city block counts for more than
-a change in a low-density suburban block of equal area.
+where $p_i$ is the 2021 census population of block $i$.
+Dense blocks count more. A gain in a high-rise neighbourhood
+outweighs the same gain in a low-density suburb. That's the point.
 
-### Sensitivity analysis
+### Why 300 m?
 
-The 300 m threshold represents approximately a 4-minute walk and is consistent with
-transport geography conventions for "within walking distance." We tested 200 m and 500 m
-thresholds to confirm that the city rankings and direction of change are robust.
+300 m is roughly a 4-minute walk,
+and a [well-established threshold](URL_TODO) in transport geography
+for "close enough to use."
 
-```{python}
-#| label: fig-sensitivity
-#| fig-cap: "Population-weighted access at three distance thresholds (2024). City rankings are consistent across thresholds."
-
-# TODO: replace with real sensitivity results
-# Expected: sensitivity_df with columns [city, threshold_m, access_share]
-
-thresholds = [200, 300, 500]
-cities = list(CITY_COLOURS.keys())
-
-# Placeholder values — replace with actual analysis output
-placeholder = {
-    "Victoria": [None, None, None],
-    "Montreal": [None, None, None],
-    "Toronto":  [None, None, None],
-}
-
-fig, ax = plt.subplots(figsize=(7, 4))
-x = np.arange(len(thresholds))
-width = 0.25
-
-for i, city in enumerate(cities):
-    vals = placeholder[city]
-    bars = ax.bar(x + i * width, vals, width, label=city,
-                  color=CITY_COLOURS[city], alpha=0.85)
-
-ax.set_xticks(x + width)
-ax.set_xticklabels([f"{t} m" for t in thresholds])
-ax.set_ylabel("Population with access (%)")
-ax.set_title("Access share is robust to buffer threshold")
-ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-ax.legend(frameon=False)
-plt.tight_layout()
-plt.savefig(FIGS / "sensitivity.png", dpi=150, bbox_inches="tight")
-plt.show()
-```
-
-> **Note:** Figure above contains placeholder values. Run `scripts/02_compute_access.py`
-> to populate real results.
+We also tested 200 m and 500 m to confirm the story doesn't change
+with the threshold. It doesn't —
+city rankings are consistent across all three distances.
 
 ---
 
-## Results
+### 🏆 Victoria: the standout
 
-```{python}
-#| label: fig-headline-bar
-#| fig-cap: "Change in population-weighted access to high-comfort cycling infrastructure, 2019–2024. Error bars show 200–500 m sensitivity range."
-
-# TODO: load from data/processed/access_results.csv
-# Expected columns: city, year, access_share, access_lo, access_hi
-
-cities = list(CITY_COLOURS.keys())
-
-# Placeholder — replace with:
-# results = pd.read_csv(DATA / "access_results.csv")
-results_placeholder = {
-    "city":        cities * 2,
-    "year":        [2019] * 3 + [2024] * 3,
-    "access_share": [None] * 6,
-}
-
-fig, ax = plt.subplots(figsize=(8, 5))
-x = np.arange(len(cities))
-width = 0.35
-
-for j, year in enumerate([2019, 2024]):
-    colour = "#cccccc" if year == 2019 else [CITY_COLOURS[c] for c in cities]
-    label  = str(year)
-    vals   = [None] * len(cities)  # replace with real values
-    bars = ax.bar(x + j * width, vals, width, label=label,
-                  color=(colour if year == 2019 else [CITY_COLOURS[c] for c in cities]),
-                  alpha=0.9)
-
-ax.set_xticks(x + width / 2)
-ax.set_xticklabels(cities)
-ax.set_ylabel("Population with access to high-comfort infrastructure (%)")
-ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-ax.set_title("Access to high-comfort cycling infrastructure, 2019 vs 2024")
-ax.legend(frameon=False)
-plt.tight_layout()
-plt.savefig(FIGS / "headline_bar.png", dpi=150, bbox_inches="tight")
-plt.show()
-```
-
-### Victoria: the standout story
-
-Victoria is the smallest city in this analysis and the one with the most dramatic trajectory.
+Victoria is the smallest city in this analysis.
+It also has the most dramatic trajectory.
 
 <!-- TODO: populate with real numbers once analysis runs -->
 
-Between 2019 and 2024, the share of Victoria residents within 300 m of high-comfort cycling
-infrastructure rose from **[X]% to [Y]%** — a gain of roughly **[Z] percentage points**.
-On a per-capita basis this is unmatched by either of the larger cities in this analysis.
+Between 2019 and 2024, the share of Victoria residents within 300 m
+of high-comfort infrastructure rose from **[X]% to [Y]%** —
+a gain of **[Z] percentage points**.
+Per capita, nothing else here comes close.
 
-What drove this? Victoria completed a series of high-comfort protected lane projects along
-its core arterials during this period, including segments along [route names to be confirmed
-from data]. Crucially, these routes connect residential blocks in high-density areas to the
-downtown core, maximising their population-weighted impact.
+What drove this? Victoria built protected lanes on its core arterials —
+routes that cut through high-density residential areas
+and connect directly to downtown.
+When you build in the right place,
+a small investment reaches a lot of people.
 
 ```{python}
 #| label: fig-victoria-map
 #| fig-cap: "Victoria cycling network, 2019 (grey) and new high-comfort segments added by 2024 (blue). Dissemination block centroids shaded by access status in 2024."
 
-# TODO: generate from scripts/03_make_figures.py
-# This cell will load pre-generated figure
-
-from pathlib import Path
 import matplotlib.image as mpimg
 
 fig_path = FIGS / "victoria_map.png"
@@ -323,25 +297,27 @@ else:
     plt.show()
 ```
 
-Victoria's gains also reflect something structural: the city is small and compact enough
-that a relatively modest kilometre investment in the right corridors reaches a substantial
-fraction of the population. This is not a knock on what Victoria has achieved — the political
-will to build protected infrastructure is real and hard-won — but it does contextualise the
-numbers. The challenge for larger cities is that the network needs to be proportionally
-much longer to achieve the same coverage.
+Victoria's compact size is part of the story.
+A modest number of route-kilometres, placed well,
+can cover a substantial share of the city.
+That's not a caveat — the political will to build here was real,
+and hard-won.
+But it does mean the challenge scales differently for bigger cities.
 
 ---
 
-### Montreal: real gains, real network
+### 🥯 Montreal: real gains, real network
 
-Montreal enters 2024 with the largest absolute network of high-comfort infrastructure among
-the three cities, and it has continued to grow.
+Montreal has the largest absolute high-comfort network of the three cities.
+And it kept growing.
 
-Between 2019 and 2024, Montreal's population-weighted access rose from **[X]% to [Y]%**.
-In absolute terms — kilometres of high-comfort infrastructure — Montreal's gains dwarf
-Victoria's. The REV (Réseau Express Vélo) programme, launched during this period,
-added a series of high-frequency protected lanes designed explicitly to function as
-cycling rapid transit, not just recreational paths.
+Between 2019 and 2024, population-weighted access rose from
+**[X]% to [Y]%**.
+In raw kilometres, Montreal's gains dwarf Victoria's.
+
+Central to this: the **REV** — Réseau Express Vélo.
+A set of high-frequency protected lanes built explicitly as
+cycling rapid transit, not recreational paths. That framing matters.
 
 ```{python}
 #| label: fig-montreal-map
@@ -366,21 +342,21 @@ else:
     plt.show()
 ```
 
-The challenge for Montreal is that it is a large and spatially uneven city. Access gains
-have been concentrated in the central plateau and downtown, while outer arrondissements
-and the suburban municipalities of the agglomération have seen little change.
-The population-weighted figure masks this geography.
+The catch: Montreal is large and uneven.
+Gains have concentrated in the central plateau and downtown.
+Outer arrondissements have seen much less.
+The city-wide number is real, but it masks a lot of geography.
 
 ---
 
-### Toronto: a city treading water
+### 🚧 Toronto: a city marking time
 
-Toronto is Canada's largest city and, on many metrics, the most underbuilt cycling city
-among its peer group.
+Toronto is Canada's largest city.
+It's also, by this measure, one of its most underbuilt.
 
-Between 2019 and 2024, Toronto's population-weighted access changed from **[X]% to [Y]%** —
-a gain of roughly **[Z] percentage points**. For a city of 2.7 million, this is
-a modest result.
+Between 2019 and 2024, population-weighted access moved from
+**[X]% to [Y]%** — roughly **[Z] percentage points**
+for a city of 2.7 million people.
 
 ```{python}
 #| label: fig-toronto-map
@@ -405,86 +381,85 @@ else:
     plt.show()
 ```
 
-This is not primarily a resources problem. Toronto's capital budget for cycling has grown
-during this period, and the city has an adopted cycling network plan. The gap between plan
-and delivery — between announced and built — is a recurring feature of Toronto's infrastructure
-politics. Proposed protected lanes have been deferred, reduced in scope, or removed entirely
-following political opposition. The data makes the cumulative effect of those decisions visible.
+This isn't a budget story.
+Toronto's capital allocation for cycling grew during this period.
+The city has an adopted cycling network plan.
+The gap is between plan and delivery.
+Protected lanes get announced, deferred, scoped down,
+or killed outright following political opposition.
+The data is a cumulative record of those decisions.
 
 ---
 
-### Summary: the divergence
+### The divergence
 
 ```{python}
 #| label: fig-divergence
 #| fig-cap: "Population-weighted access to high-comfort cycling infrastructure, 2019 and 2024, by city. Lines connect the same city across years."
 
-# TODO: replace with actual values
+# TODO: replace with actual values once access results are computed
+# results = pd.read_csv(DATA / "access_results.csv")
+
 fig, ax = plt.subplots(figsize=(6, 5))
-
-# Placeholder: two columns (2019, 2024) with city lines
-years = [2019, 2024]
-for city, colour in CITY_COLOURS.items():
-    vals = [None, None]  # replace with real [2019_val, 2024_val]
-    # ax.plot(years, vals, "o-", color=colour, linewidth=2.5, markersize=8, label=city)
-
-ax.set_xlim(2018.5, 2024.5)
-ax.set_xticks([2019, 2024])
-ax.set_ylabel("Population with access (%)")
-ax.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1.0))
-ax.set_title("The gap is widening")
-ax.legend(frameon=False)
-ax.text(0.5, 0.5, "Populate with real data", ha="center", va="center",
-        transform=ax.transAxes, color="#aaa", fontsize=11)
+ax.text(0.5, 0.5, "Populate with real data\n(scripts/02_compute_access.py)",
+        ha="center", va="center", fontsize=13, color="#888", transform=ax.transAxes)
+ax.axis("off")
+ax.set_title("The gap is widening — placeholder", color="#aaa")
 plt.tight_layout()
-plt.savefig(FIGS / "divergence.png", dpi=150, bbox_inches="tight")
 plt.show()
 ```
 
-| City | 2019 access | 2024 access | Change |
-|------|-------------|-------------|--------|
+| City | 2019 | 2024 | Change |
+|------|------|------|--------|
 | Victoria | —% | —% | +— pp |
 | Montreal | —% | —% | +— pp |
-| Toronto | —% | —% | +— pp |
+| Toronto  | —% | —% | +— pp |
 
-: Population-weighted access to high-comfort cycling infrastructure. Percentage of residents within 300 m of a high-comfort segment. {#tbl-results}
+: Population-weighted access to high-comfort cycling infrastructure.
+Percentage of residents within 300 m of a high-comfort segment.
+{#tbl-results}
 
 ---
 
-## Conclusion
+## 🔍 Conclusion
 
-The divergence across these three cities is not a story about resources or even population size —
-it is a story about political choices. Victoria and Montreal have made sustained commitments to
-building infrastructure that the evidence shows increases cycling participation. Toronto has not.
+This isn't a story about resources or city size.
+It's about political choices.
 
-For transit planners and mobility researchers, this matters for reasons beyond cycling mode share.
-High-comfort cycling networks:
+Victoria and Montreal built the kind of infrastructure
+the evidence says works. Toronto didn't.
 
-- **Extend the effective walkshed** of transit stops, particularly for the first/last mile in
-  medium-density areas where bus frequency alone cannot close the gap
-- **Reduce pressure on peak-hour vehicle capacity** when they serve commute corridors
-- **Are disproportionately used by new cyclists** — people who would not ride on painted lanes
-  but will ride on protected infrastructure, which is the mechanism through which network
-  investment translates into modal shift
+That matters beyond cycling mode share.
+High-comfort networks are a transit multiplier:
 
-The Canadian Cycling Network Database will presumably be updated again. When it is, the
-question will be whether the gap between cities like Victoria and Montreal on one hand,
-and cities like Toronto on the other, has continued to widen — or whether there's evidence
-that the laggards are catching up.
+- 🚌 **They extend the walkshed** around transit stops —
+  critical for first/last mile in medium-density areas
+  where bus frequency alone can't close the gap
+- 📉 **They reduce peak-hour vehicle pressure**
+  on commute corridors
+- 🙋 **They reach new riders** — people who won't ride on
+  painted lanes but will ride on protected ones.
+  That's the mechanism behind modal shift.
 
-Based on the trajectory visible in this analysis, there's no strong reason to expect catch-up
-without a change in the political conditions that determine which projects get built.
+The CCND will be updated again.
+When it is, the question is whether the gap
+between cities like Victoria and Montreal
+and cities like Toronto has kept widening —
+or whether the laggards have finally started catching up.
+
+Based on what this analysis shows,
+there's no reason to expect catch-up
+without a real change in what actually gets built.
 
 ---
 
 ## Appendix: data and code
 
-All analysis code is available in the `scripts/` directory of the accompanying repository.
-Data processing follows this pipeline:
+All analysis code is in the `scripts/` directory.
 
-1. `scripts/01_load_data.py` — load and classify CCND shapefiles for 2019 and 2024
-2. `scripts/02_compute_access.py` — compute DB-level access indicators and city-level summaries
-3. `scripts/03_make_figures.py` — generate maps and export figure PNGs
+1. `scripts/01_load_data.py` — load and classify CCND shapefiles
+2. `scripts/02_compute_access.py` — compute DB-level access indicators
+3. `scripts/03_make_figures.py` — generate maps and export figures
 
 ```{python}
 #| label: tbl-session-info

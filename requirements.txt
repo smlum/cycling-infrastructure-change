@@ -1,0 +1,9 @@
+geopandas
+pandas
+matplotlib
+contextily
+shapely
+numpy
+jupyter
+jupyter-cache
+pyarrow
