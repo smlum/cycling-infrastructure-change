@@ -1,0 +1,32 @@
+project:
+  type: default
+
+format:
+  html:
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    toc-location: left
+    number-sections: false
+    code-fold: true
+    code-tools: true
+    code-summary: "Show code"
+    self-contained: true
+    fig-width: 9
+    fig-height: 6
+    fig-dpi: 150
+    html-math-method: katex
+    css: styles.css
+    grid:
+      sidebar-width: 220px
+      body-width: 900px
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  cache: true
+  freeze: auto
+
+jupyter: python3

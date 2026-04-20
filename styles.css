@@ -1,0 +1,34 @@
+/* Tighten up the body text for a blog-post feel */
+body {
+  font-size: 1.05rem;
+  line-height: 1.75;
+}
+
+h1.title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  font-size: 1.15rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+
+/* Callout boxes */
+.callout {
+  border-radius: 4px;
+}
+
+/* Slightly tighter figure captions */
+figcaption, .figure-caption {
+  font-size: 0.88rem;
+  color: #666;
+  margin-top: 0.4rem;
+}
+
+/* Keep code output from dominating */
+pre.sourceCode {
+  font-size: 0.82rem;
+}
