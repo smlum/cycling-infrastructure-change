@@ -31,10 +31,26 @@ h1.title {
   border-radius: 4px;
 }
 
-/* Slightly tighter figure captions */
+/* Responsive figures — prevent overflow from matplotlib output */
+.cell-output-display,
+.quarto-figure,
+.cell-output-display figure {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.cell-output-display img,
+.quarto-figure img {
+  width: 100% !important;
+  height: auto !important;
+}
+
+/* Figure captions — small, light, sans-serif */
 figcaption, .figure-caption {
-  font-size: 0.88rem;
-  color: #666;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-style: normal;
+  color: #999;
   margin-top: 0.4rem;
 }
 

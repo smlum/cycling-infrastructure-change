@@ -23,6 +23,10 @@ format:
       sidebar-width: 220px
       body-width: 900px
 
+crossref:
+  fig-prefix: ""
+  fig-title: ""
+
 execute:
   echo: true
   warning: false

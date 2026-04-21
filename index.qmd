@@ -22,6 +22,7 @@ import numpy as np
 from pathlib import Path
 
 DATA = Path("data/processed")
+RAW  = Path("data/raw")
 FIGS = Path("figures")
 FIGS.mkdir(exist_ok=True)
 
@@ -68,7 +69,7 @@ across three cities: Victoria, Montreal, and Toronto.
 
 **TL;DR:** Victoria punches way above its weight.
 Montreal has made real gains.
-Toronto has been sluggish — despite being 
+Toronto has been.. sluggish, despite being 
 Canada's largest city.
 
 ---
@@ -86,31 +87,6 @@ infrastructure:
 Each dataset is a collection of line segments — one per stretch of
 infrastructure — with attributes describing the type of facility.
 
-```{python}
-#| label: tbl-raw-counts
-#| tbl-cap: "Raw segment counts and total kilometres by city and year."
-
-# TODO: replace with real data once processed
-# Expected columns: city, year, n_segments, total_km, high_comfort_km
-
-summary = pd.DataFrame({
-    "City":            ["Victoria", "Victoria", "Montreal", "Montreal", "Toronto", "Toronto"],
-    "Year":            [2019, 2024, 2019, 2024, 2019, 2024],
-    "Total km":        [None, None, None, None, None, None],
-    "High-comfort km": [None, None, None, None, None, None],
-    "% High-comfort":  [None, None, None, None, None, None],
-})
-# Uncomment when data is ready:
-# summary = pd.read_csv(DATA / "network_summary.csv")
-
-summary.style \
-    .format({"Total km": "{:.0f}", "High-comfort km": "{:.0f}", "% High-comfort": "{:.1f}%"},
-            na_rep="—") \
-    .set_properties(**{"text-align": "right"}) \
-    .set_table_styles([{"selector": "th", "props": [("text-align", "left")]}]) \
-    .hide(axis="index")
-```
-
 ---
 
 ## 🏷️ Classification is hard
@@ -118,14 +94,15 @@ summary.style \
 Here's a problem that doesn't get enough air time in cycling research:
 municipalities have wildly inconsistent names for their infrastructure.
 
-One city's "bike lane" is a painted stripe in the door zone.
+One city's "bike lane" is a 50cm wide painted stripe in the door zone.
 Another's is a fully protected cycle track with a physical barrier.
-A third calls the same thing a "cycling corridor,"
-or something that doesn't map cleanly to any standard category at all.
 
 This matters because the raw data reflects whatever label
-each municipality chose to use —
-not a consistent, objective description of what was actually built.
+each municipality choses to use —
+not a consistent description of what was actually built.
+
+![*Does this count? A Montreal bike lane. The post is load-bearing.*](images/montrealbikelane_2.jpg){width=100%}
+
 
 ### How we resolved it
 
@@ -142,58 +119,121 @@ To apply Can-BICS consistently, we verified classifications
 using **Google Street View**, checking ambiguous segments
 in each city against what was actually on the ground.
 
-![*Does this count? A Montreal bike lane. The post is load-bearing.*](images/montrealbikelane_2.jpg){width=100%}
+```{python}
+#| label: raw-counts
+#| tbl-cap: "Total and high-comfort kilometres by city and year. High-comfort includes cycle tracks, bike paths, and local street bikeways."
+
+raw = pd.read_csv(DATA / "city_lengths.csv").fillna(0)
+
+HC_TYPES = ["Cycle Track", "Bike Path", "Local Street Bikeway"]
+
+rows = []
+for _, row in raw.iterrows():
+    for year in [2019, 2024]:
+        hc = sum(row.get(f"{t} {year}", 0) for t in HC_TYPES)
+        total = row[f"Total {year}"]
+        rows.append({
+            "City":             row["Municipality"],
+            "Year":             year,
+            "Total km":         total,
+            "High-comfort km":  hc,
+            "% High-comfort":   100 * hc / total if total > 0 else 0,
+        })
+
+summary = pd.DataFrame(rows).sort_values(["City", "Year"]).reset_index(drop=True)
+
+summary.style \
+    .format({
+        "Year":            "{:.0f}",
+        "Total km":        "{:.0f}",
+        "High-comfort km": "{:.0f}",
+        "% High-comfort":  "{:.0f}%",
+    }) \
+    .set_properties(**{"text-align": "right"}) \
+    .set_table_styles([{"selector": "th", "props": [("text-align", "left")]}]) \
+    .hide(axis="index")
+```
 
 ---
 
 ## 📍 How do we measure spatial access?
 
-We measure access at the **dissemination block (DB)** level —
-Statistics Canada's smallest geographic unit with population counts.
+We measure access at the **[dissemination block (DB)](https://www150.statcan.gc.ca/n1/pub/92-195-x/2021001/geo/db-id/db-id-eng.htm){target="_blank"}** 
+level, Statistics Canada's smallest geographic unit with population counts.
 There are thousands of them per city.
 For each one, we ask: **is there high-comfort infrastructure nearby?**
 
 ```{python}
-#| label: fig-method-diagram
-#| fig-cap: "Each dissemination block centroid is buffered by 300 m (straight-line distance). A block has access if any high-comfort segment falls within that buffer."
+#| label: method-diagram
+#| fig-cap: "Check! ✅ This dissemination block in Montreal's Plateau neighbourhood contains high comfort infrastructure within 300m of its centroid."
+#| out-width: 100%
+#| fig-dpi: 96
 
-fig, ax = plt.subplots(figsize=(8, 5))
+METRIC_CRS = "EPSG:3347"
+PLOT_CRS   = "EPSG:3857"
+BUFFER_M   = 300
+FIG_W, FIG_H = 6, 3.5
 
-# Draw a stylised block grid
-for x in range(5):
-    for y in range(4):
-        rect = plt.Rectangle((x, y), 0.9, 0.9, linewidth=0.5,
-                              edgecolor="#bbb", facecolor="#f5f5f5")
-        ax.add_patch(rect)
+# --- Load pre-extracted GeoJSONs (committed to git) ---
+block      = gpd.read_file("data/example_block.geojson").to_crs(METRIC_CRS)
+network_hc = gpd.read_file("data/example_network.geojson").to_crs(METRIC_CRS)
+centroid   = block.geometry.iloc[0].centroid
+buffer     = centroid.buffer(BUFFER_M)
 
-# A high-comfort segment running diagonally
-ax.plot([0.5, 4.5], [0.5, 3.5], color="#2196F3", linewidth=3,
-        label="High-comfort segment", zorder=3)
+# --- Reproject everything to Web Mercator for contextily ---
+block_plot    = block.to_crs(PLOT_CRS)
+buffer_plot   = gpd.GeoSeries([buffer], crs=METRIC_CRS).to_crs(PLOT_CRS)
+centroid_plot = gpd.GeoSeries([centroid], crs=METRIC_CRS).to_crs(PLOT_CRS)
+network_plot  = network_hc.to_crs(PLOT_CRS)
 
-# Show two centroids and their buffers
-centroids = [(0.45, 2.45), (2.45, 0.45)]
-colours   = ["#4CAF50", "#FF9800"]
-labels    = ["Within 300 m → access = 1", "Outside 300 m → access = 0"]
+# --- Compute landscape-friendly axis limits ---
+bx0, by0, bx1, by1 = buffer_plot.total_bounds
+data_w  = bx1 - bx0
+data_h  = by1 - by0
+# Expand whichever dimension needs growing to hit the target aspect ratio
+target_aspect = FIG_W / FIG_H
+if data_w / data_h < target_aspect:
+    data_w = data_h * target_aspect
+else:
+    data_h = data_w / target_aspect
+cx_mid  = (bx0 + bx1) / 2
+cy_mid  = (by0 + by1) / 2
+pad     = 0.15
+xlim    = (cx_mid - data_w / 2 * (1 + pad), cx_mid + data_w / 2 * (1 + pad))
+ylim    = (cy_mid - data_h / 2 * (1 + pad), cy_mid + data_h / 2 * (1 + pad))
 
-for (cx, cy), colour, label in zip(centroids, colours, labels):
-    circle = plt.Circle((cx, cy), 0.8, color=colour, alpha=0.2)
-    ax.add_patch(circle)
-    ax.plot(cx, cy, "o", color=colour, markersize=7, zorder=4)
-    ax.annotate(label, (cx, cy), xytext=(cx + 0.15, cy + 0.5),
-                fontsize=9, color=colour,
-                arrowprops=dict(arrowstyle="-", color=colour, lw=0.8))
+fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
 
-ax.set_xlim(-0.2, 5.2)
-ax.set_ylim(-0.2, 4.5)
-ax.set_aspect("equal")
-ax.axis("off")
-ax.set_title("300 m buffer access method", fontsize=12, pad=10)
+# Data layers
+buffer_plot.plot(ax=ax, facecolor="#2196F3", alpha=0.15,
+                 edgecolor="#2196F3", linewidth=1.5, linestyle="--", zorder=2)
+block_plot.plot(ax=ax, facecolor="none", edgecolor="#333",
+                linewidth=1.5, zorder=3)
+network_plot.plot(ax=ax, color="#4CAF50", linewidth=2.5, zorder=4)
+centroid_plot.plot(ax=ax, color="#2196F3", markersize=60, zorder=5)
 
-blue_line = mpatches.Patch(color="#2196F3", label="High-comfort segment")
-ax.legend(handles=[blue_line], loc="upper left", frameon=False, fontsize=9)
+ax.set_xlim(xlim)
+ax.set_ylim(ylim)
 
-plt.tight_layout()
-plt.savefig(FIGS / "method_diagram.png", dpi=150, bbox_inches="tight")
+# Basemap last — zoom=17 gives sharp tiles at neighbourhood scale
+ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron, zoom=17)
+
+ax.set_axis_off()
+
+# Simple legend
+hc_line   = mpatches.Patch(color="#4CAF50", label="High-comfort segment")
+buf_patch = mpatches.Patch(facecolor="#2196F3", alpha=0.3,
+                           edgecolor="#2196F3", label="300 m buffer")
+dot       = plt.Line2D([0], [0], marker="o", color="w",
+                       markerfacecolor="#2196F3", markersize=9,
+                       label="Block centroid")
+# Legend inside the axes — avoids adding width outside the map boundary
+ax.legend(handles=[hc_line, buf_patch, dot],
+          loc="lower right", frameon=True, fontsize=8,
+          framealpha=0.9, bbox_to_anchor=(1.0, 0.0))
+
+plt.tight_layout(pad=0)
+plt.savefig(FIGS / "method_diagram.png", dpi=96, bbox_inches="tight")
 plt.show()
 ```
 
@@ -219,7 +259,7 @@ outweighs the same gain in a low-density suburb.
 ### Why 300 m?
 
 300 m is roughly a 4-minute walk,
-and a [well-established threshold](URL_TODO){target="_blank"} in transport geography
+and a [well-established threshold](https://www150.statcan.gc.ca/n1/pub/82-003-x/2022010/article/00001-eng.htm){target="_blank"} in transport geography
 for "close enough to use."
 
 We also tested 200 m and 500 m to confirm the story doesn't change
@@ -248,28 +288,67 @@ In a compact city, the right corridors in the right places
 move the numbers fast.
 
 ```{python}
-#| label: fig-victoria-map
-#| fig-cap: "Victoria cycling network, 2019 (grey) and new high-comfort segments added by 2024 (blue). Dissemination block centroids shaded by access status in 2024."
+#| label: victoria-map
+#| fig-cap: "Victoria cycling network, 2019 vs 2024. Blue: high-comfort. Red: lower-comfort (painted lanes, sharrows, shared roads). In five years, the city flipped the balance."
+#| out-width: 100%
+#| fig-dpi: 96
 
-import matplotlib.image as mpimg
+PLOT_CRS = "EPSG:3857"
 
-fig_path = FIGS / "victoria_map.png"
-if fig_path.exists():
-    img = mpimg.imread(fig_path)
-    fig, ax = plt.subplots(figsize=(9, 7))
-    ax.imshow(img)
-    ax.axis("off")
-    plt.tight_layout()
-    plt.show()
-else:
-    fig, ax = plt.subplots(figsize=(9, 7))
-    ax.text(0.5, 0.5, "Map will appear here after running\nscripts/03_make_figures.py",
-            ha="center", va="center", fontsize=13, color="#888",
-            transform=ax.transAxes)
-    ax.axis("off")
-    ax.set_title("Victoria — network map placeholder", color="#aaa")
-    plt.tight_layout()
-    plt.show()
+TIER_COLOURS = {
+    "high": "#2196F3",  # blue
+    "low":  "#E57373",  # muted red
+}
+TIER_MAP = {
+    "cycle_track":          "high",
+    "bike_path":            "high",
+    "local_street_bikeway": "high",
+    "multi_use_path":       "low",
+    "painted_bike_lane":    "low",
+    # shared_roadway / major_shared_roadway excluded
+}
+TIER_ORDER = ["low", "high"]   # draw low first so high is on top
+
+def load_tiered(city, year):
+    gdf = gpd.read_parquet(DATA / f"{city}_{year}.parquet").to_crs(PLOT_CRS)
+    gdf["tier"] = gdf["canbics_class"].map(TIER_MAP)
+    return gdf[gdf["tier"].notna()].reset_index(drop=True)
+
+vic_2019 = load_tiered("victoria", 2019)
+vic_2024 = load_tiered("victoria", 2024)
+
+# Shared bounds from combined extent
+combined = pd.concat([vic_2019, vic_2024])
+bx0, by0, bx1, by1 = gpd.GeoDataFrame(combined, geometry="geometry").total_bounds
+xpad = (bx1 - bx0) * 0.04
+ypad = (by1 - by0) * 0.04
+xlim = (bx0 - xpad, bx1 + xpad)
+ylim = (by0 - ypad, by1 + ypad)
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+for ax, gdf, year in zip(axes, [vic_2019, vic_2024], [2019, 2024]):
+    for tier in TIER_ORDER:
+        subset = gdf[gdf["tier"] == tier]
+        lw = 1.8 if tier == "high" else 0.8
+        subset.plot(ax=ax, color=TIER_COLOURS[tier], linewidth=lw, zorder=TIER_ORDER.index(tier)+2)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron, zoom=13)
+    ax.set_axis_off()
+    ax.set_title(str(year), fontsize=12, pad=6, fontfamily="sans-serif")
+
+# Shared legend on the right panel
+legend_handles = [
+    mpatches.Patch(color=TIER_COLOURS["high"], label="High comfort"),
+    mpatches.Patch(color=TIER_COLOURS["low"],  label="Lower comfort"),
+]
+axes[1].legend(handles=legend_handles, loc="lower right",
+               frameon=True, fontsize=8, framealpha=0.9)
+
+plt.tight_layout(pad=0.5)
+plt.savefig(FIGS / "victoria_map.png", dpi=96, bbox_inches="tight")
+plt.show()
 ```
 
 ---
@@ -288,26 +367,39 @@ A set of high-frequency protected lanes built explicitly as
 cycling rapid transit, not recreational paths. That framing matters.
 
 ```{python}
-#| label: fig-montreal-map
-#| fig-cap: "Montreal cycling network, 2019 (grey) and new high-comfort segments added by 2024 (green). REV corridors visible as high-density additions in central arrondissements."
+#| label: montreal-map
+#| fig-cap: "Montreal cycling network, 2019 vs 2024. Blue: high-comfort. Red: lower-comfort. REV corridors visible as high-density additions in central arrondissements."
+#| out-width: 100%
+#| fig-dpi: 96
 
-fig_path = FIGS / "montreal_map.png"
-if fig_path.exists():
-    img = mpimg.imread(fig_path)
-    fig, ax = plt.subplots(figsize=(9, 7))
-    ax.imshow(img)
-    ax.axis("off")
-    plt.tight_layout()
-    plt.show()
-else:
-    fig, ax = plt.subplots(figsize=(9, 7))
-    ax.text(0.5, 0.5, "Map will appear here after running\nscripts/03_make_figures.py",
-            ha="center", va="center", fontsize=13, color="#888",
-            transform=ax.transAxes)
-    ax.axis("off")
-    ax.set_title("Montreal — network map placeholder", color="#aaa")
-    plt.tight_layout()
-    plt.show()
+mtl_2019 = load_tiered("montreal", 2019)
+mtl_2024 = load_tiered("montreal", 2024)
+
+combined  = pd.concat([mtl_2019, mtl_2024])
+bx0, by0, bx1, by1 = gpd.GeoDataFrame(combined, geometry="geometry").total_bounds
+xpad, ypad = (bx1-bx0)*0.03, (by1-by0)*0.03
+xlim, ylim = (bx0-xpad, bx1+xpad), (by0-ypad, by1+ypad)
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+for ax, gdf, year in zip(axes, [mtl_2019, mtl_2024], [2019, 2024]):
+    for tier in TIER_ORDER:
+        gdf[gdf["tier"] == tier].plot(ax=ax, color=TIER_COLOURS[tier],
+                                      linewidth=1.4 if tier == "high" else 0.5,
+                                      zorder=TIER_ORDER.index(tier)+2)
+    ax.set_xlim(xlim); ax.set_ylim(ylim)
+    ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron, zoom=12)
+    ax.set_axis_off()
+    ax.set_title(str(year), fontsize=12, pad=6, fontfamily="sans-serif")
+
+axes[1].legend(handles=[
+    mpatches.Patch(color=TIER_COLOURS["high"], label="High comfort"),
+    mpatches.Patch(color=TIER_COLOURS["low"],  label="Lower comfort"),
+], loc="lower right", frameon=True, fontsize=8, framealpha=0.9)
+
+plt.tight_layout(pad=0.5)
+plt.savefig(FIGS / "montreal_map.png", dpi=96, bbox_inches="tight")
+plt.show()
 ```
 
 The catch: Montreal is large and uneven.
@@ -328,26 +420,39 @@ tell a more modest story: access moved from **[X]% to [Y]%** —
 roughly **[Z] percentage points**.
 
 ```{python}
-#| label: fig-toronto-map
-#| fig-cap: "Toronto cycling network, 2019 (grey) and new high-comfort segments added by 2024 (orange). Additions are concentrated in the inner city."
+#| label: toronto-map
+#| fig-cap: "Toronto cycling network, 2019 vs 2024. Orange: high-comfort. Red: lower-comfort. New protected lanes visible along key inner-city corridors."
+#| out-width: 100%
+#| fig-dpi: 96
 
-fig_path = FIGS / "toronto_map.png"
-if fig_path.exists():
-    img = mpimg.imread(fig_path)
-    fig, ax = plt.subplots(figsize=(9, 7))
-    ax.imshow(img)
-    ax.axis("off")
-    plt.tight_layout()
-    plt.show()
-else:
-    fig, ax = plt.subplots(figsize=(9, 7))
-    ax.text(0.5, 0.5, "Map will appear here after running\nscripts/03_make_figures.py",
-            ha="center", va="center", fontsize=13, color="#888",
-            transform=ax.transAxes)
-    ax.axis("off")
-    ax.set_title("Toronto — network map placeholder", color="#aaa")
-    plt.tight_layout()
-    plt.show()
+tor_2019 = load_tiered("toronto", 2019)
+tor_2024 = load_tiered("toronto", 2024)
+
+combined  = pd.concat([tor_2019, tor_2024])
+bx0, by0, bx1, by1 = gpd.GeoDataFrame(combined, geometry="geometry").total_bounds
+xpad, ypad = (bx1-bx0)*0.03, (by1-by0)*0.03
+xlim, ylim = (bx0-xpad, bx1+xpad), (by0-ypad, by1+ypad)
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+for ax, gdf, year in zip(axes, [tor_2019, tor_2024], [2019, 2024]):
+    for tier in TIER_ORDER:
+        gdf[gdf["tier"] == tier].plot(ax=ax, color=TIER_COLOURS[tier],
+                                      linewidth=1.4 if tier == "high" else 0.5,
+                                      zorder=TIER_ORDER.index(tier)+2)
+    ax.set_xlim(xlim); ax.set_ylim(ylim)
+    ctx.add_basemap(ax, source=ctx.providers.CartoDB.Positron, zoom=12)
+    ax.set_axis_off()
+    ax.set_title(str(year), fontsize=12, pad=6, fontfamily="sans-serif")
+
+axes[1].legend(handles=[
+    mpatches.Patch(color=TIER_COLOURS["high"], label="High comfort"),
+    mpatches.Patch(color=TIER_COLOURS["low"],  label="Lower comfort"),
+], loc="lower right", frameon=True, fontsize=8, framealpha=0.9)
+
+plt.tight_layout(pad=0.5)
+plt.savefig(FIGS / "toronto_map.png", dpi=96, bbox_inches="tight")
+plt.show()
 ```
 
 The infrastructure that got built matters.
@@ -360,7 +465,7 @@ The data reflects both.
 ### The divergence
 
 ```{python}
-#| label: fig-divergence
+#| label: divergence
 #| fig-cap: "Population-weighted access to high-comfort cycling infrastructure, 2019 and 2024, by city. Lines connect the same city across years."
 
 # TODO: replace with actual values once access results are computed
@@ -429,7 +534,7 @@ All analysis code is in the `scripts/` directory.
 3. `scripts/03_make_figures.py` — generate maps and export figures
 
 ```{python}
-#| label: tbl-session-info
+#| label: session-info
 #| tbl-cap: "Python package versions used in this analysis."
 #| code-fold: true
 

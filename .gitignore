@@ -1,3 +1,6 @@
+# Raw data — large files, not committed
+data/raw/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
