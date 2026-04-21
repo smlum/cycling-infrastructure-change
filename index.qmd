@@ -1,6 +1,5 @@
 ---
 title: "Who's Actually Building Cycling Infrastructure?"
-subtitle: "Access to high-comfort bike networks across Canadian cities, 2019–2024"
 author: "Sam Lumley"
 date: "2026-04-20"
 format:
@@ -43,7 +42,7 @@ plt.rcParams.update({
 
 ::: {.callout-note appearance="simple"}
 This is preliminary work based on openly available data.
-It is not an official release and should not be cited as such. ✌️ 
+It's not an official release and should not be cited as such. ✌️ 
 :::
 
 ## 🚲 Intro
@@ -52,26 +51,25 @@ Bike infrastructure is one of the cheapest ways a city can
 expand who can get around — but only one kind actually works.
 
 Painted lanes on busy roads do almost nothing for ridership —
-[the research on this is settled](URL_TODO).
+[the research on this is settled](https://doi.org/10.1016/j.tbs.2023.100736){target="_blank"}.
 What moves the needle is **high-comfort** infrastructure:
 physically separated cycle tracks, multi-use paths, and local street 
 bikeways. Places where you don't have to negotiate with a moving car.
 
-Between 2019 and 2024, Canadian cities added thousands of kilometres
+Between 2019 and 2024, Canadian cities added hunfreds of kilometres
 of cycling infrastructure. Not all of it was equal.
-Not all cities performed equally.
 
-Using two releases of the
-**[Canadian Cycling Network Database (CCND)](URL_TODO)**
-and the **[Can-BICS](URL_TODO)** classification framework,
+Using the
+**[Canadian Cycling Network Database](https://www150.statcan.gc.ca/n1/pub/23-26-0004/232600042024001-eng.htm){target="_blank"}**
+and the **[Can-BICS](https://www.canada.ca/en/public-health/services/reports-publications/health-promotion-chronic-disease-prevention-canada-research-policy-practice/vol-40-no-9-2020/canbics-classification-system-naming-convention-cycling-infrastructure.html){target="_blank"}**
+classification framework,
 we measured how access to high-comfort infrastructure changed
 across three cities: Victoria, Montreal, and Toronto.
 
 **TL;DR:** Victoria punches way above its weight.
 Montreal has made real gains.
-Toronto has barely moved — despite being Canada's largest city,
-and despite cycling investment being perpetually promised
-and perpetually deferred.
+Toronto has been sluggish — despite being 
+Canada's largest city.
 
 ---
 
@@ -80,10 +78,10 @@ and perpetually deferred.
 The analysis uses two national snapshots of Canadian cycling
 infrastructure:
 
-- **[2019 release](https://health-infobase.canada.ca/datalab/bicycling-infrastructure.html)**
+- **[2019](https://health-infobase.canada.ca/datalab/bicycling-infrastructure.html){target="_blank"}**
   — baseline network, published by the Public Health Agency of Canada
-- **[2024 release](URL_TODO)**
-  — five years of additions
+- **[2024](https://www150.statcan.gc.ca/n1/pub/23-26-0004/232600042024001-eng.htm){target="_blank"}**
+  — From Statistics Canada
 
 Each dataset is a collection of line segments — one per stretch of
 infrastructure — with attributes describing the type of facility.
@@ -117,12 +115,12 @@ summary.style \
 
 ## 🏷️ Classification is hard
 
-Here's a problem that doesn't get enough attention in cycling research:
+Here's a problem that doesn't get enough air time in cycling research:
 municipalities have wildly inconsistent names for their infrastructure.
 
 One city's "bike lane" is a painted stripe in the door zone.
 Another's is a fully protected cycle track with a physical barrier.
-A third calls the same thing a "multi-use path," a "cycling corridor,"
+A third calls the same thing a "cycling corridor,"
 or something that doesn't map cleanly to any standard category at all.
 
 This matters because the raw data reflects whatever label
@@ -131,44 +129,20 @@ not a consistent, objective description of what was actually built.
 
 ### How we resolved it
 
-We used **[Can-BICS](URL_TODO)**
+We used **[Can-BICS](URL_TODO){target="_blank"}**
 (Canadian Bikeway Comfort and Safety) as a common framework.
 Can-BICS classifies cycling infrastructure into three comfort tiers
 based on physical separation from motor traffic:
 *high*, *medium*, and *low*.
 This analysis focuses on the high-comfort tier —
 the facilities with genuine physical separation
-that [research shows actually shift ridership](URL_TODO).
+that [research shows actually shift ridership](URL_TODO){target="_blank"}.
 
-To apply Can-BICS consistently, we verified infrastructure
-classifications using **Google Street View**,
-checking a sample of segments in each city
-where the attribute data was ambiguous or inconsistent.
+To apply Can-BICS consistently, we verified classifications
+using **Google Street View**, checking ambiguous segments
+in each city against what was actually on the ground.
 
-```{python}
-#| label: fig-gsv-example
-#| fig-cap: "Example of Street View verification: the same infrastructure type labelled differently across municipalities. TODO: replace with actual Street View screenshot."
-
-fig_path = FIGS / "gsv_example.png"
-if fig_path.exists():
-    import matplotlib.image as mpimg
-    img = mpimg.imread(fig_path)
-    fig, ax = plt.subplots(figsize=(9, 5))
-    ax.imshow(img)
-    ax.axis("off")
-    plt.tight_layout()
-    plt.show()
-else:
-    fig, ax = plt.subplots(figsize=(9, 5))
-    ax.text(0.5, 0.5,
-            "Street View verification example\n(add screenshot to figures/gsv_example.png)",
-            ha="center", va="center", fontsize=13, color="#888",
-            transform=ax.transAxes)
-    ax.axis("off")
-    ax.set_title("Classification verification — placeholder", color="#aaa")
-    plt.tight_layout()
-    plt.show()
-```
+![*Does this count? A Montreal bike lane. The post is load-bearing.*](images/montrealbikelane_2.jpg){width=100%}
 
 ---
 
@@ -177,7 +151,7 @@ else:
 We measure access at the **dissemination block (DB)** level —
 Statistics Canada's smallest geographic unit with population counts.
 There are thousands of them per city.
-For each one, we ask: is there high-comfort infrastructure nearby?
+For each one, we ask: **is there high-comfort infrastructure nearby?**
 
 ```{python}
 #| label: fig-method-diagram
@@ -239,13 +213,13 @@ A = \frac{\sum_i p_i \cdot a_i}{\sum_i p_i}
 $$
 
 where $p_i$ is the 2021 census population of block $i$.
-Dense blocks count more. A gain in a high-rise neighbourhood
-outweighs the same gain in a low-density suburb. That's the point.
+Dense blocks count more: a gain in a high-rise neighbourhood
+outweighs the same gain in a low-density suburb. 
 
 ### Why 300 m?
 
 300 m is roughly a 4-minute walk,
-and a [well-established threshold](URL_TODO) in transport geography
+and a [well-established threshold](URL_TODO){target="_blank"} in transport geography
 for "close enough to use."
 
 We also tested 200 m and 500 m to confirm the story doesn't change
@@ -266,11 +240,12 @@ of high-comfort infrastructure rose from **[X]% to [Y]%** —
 a gain of **[Z] percentage points**.
 Per capita, nothing else here comes close.
 
-What drove this? Victoria built protected lanes on its core arterials —
-routes that cut through high-density residential areas
-and connect directly to downtown.
-When you build in the right place,
-a small investment reaches a lot of people.
+Much of the story is *conversion*, not just addition.
+Victoria upgraded painted bike lanes to protected cycle tracks,
+and replaced sharrows with traffic-controlled local street bikeways —
+infrastructure that actually changes who feels comfortable riding.
+In a compact city, the right corridors in the right places
+move the numbers fast.
 
 ```{python}
 #| label: fig-victoria-map
@@ -296,13 +271,6 @@ else:
     plt.tight_layout()
     plt.show()
 ```
-
-Victoria's compact size is part of the story.
-A modest number of route-kilometres, placed well,
-can cover a substantial share of the city.
-That's not a caveat — the political will to build here was real,
-and hard-won.
-But it does mean the challenge scales differently for bigger cities.
 
 ---
 
@@ -349,18 +317,19 @@ The city-wide number is real, but it masks a lot of geography.
 
 ---
 
-### 🚧 Toronto: a city marking time
+### 🚧 Toronto: real progress, uneven delivery
 
-Toronto is Canada's largest city.
-It's also, by this measure, one of its most underbuilt.
+Toronto did build during this period.
+New cycle tracks appeared along key corridors,
+and the city made genuine additions to its high-comfort network.
 
-Between 2019 and 2024, population-weighted access moved from
-**[X]% to [Y]%** — roughly **[Z] percentage points**
-for a city of 2.7 million people.
+But for a city of 2.7 million, the population-weighted numbers
+tell a more modest story: access moved from **[X]% to [Y]%** —
+roughly **[Z] percentage points**.
 
 ```{python}
 #| label: fig-toronto-map
-#| fig-cap: "Toronto cycling network, 2019 (grey) and new high-comfort segments added by 2024 (orange). Most new additions are concentrated in the inner city; the inner suburbs remain largely unserved."
+#| fig-cap: "Toronto cycling network, 2019 (grey) and new high-comfort segments added by 2024 (orange). Additions are concentrated in the inner city."
 
 fig_path = FIGS / "toronto_map.png"
 if fig_path.exists():
@@ -381,13 +350,10 @@ else:
     plt.show()
 ```
 
-This isn't a budget story.
-Toronto's capital allocation for cycling grew during this period.
-The city has an adopted cycling network plan.
-The gap is between plan and delivery.
-Protected lanes get announced, deferred, scoped down,
-or killed outright following political opposition.
-The data is a cumulative record of those decisions.
+The infrastructure that got built matters.
+The gap is in what didn't — routes that were planned,
+then deferred, reduced, or removed under political pressure.
+The data reflects both.
 
 ---
 
@@ -427,7 +393,8 @@ This isn't a story about resources or city size.
 It's about political choices.
 
 Victoria and Montreal built the kind of infrastructure
-the evidence says works. Toronto didn't.
+the evidence says works. Toronto made progress —
+but the scale of what's needed still outpaces what got delivered.
 
 That matters beyond cycling mode share.
 High-comfort networks are a transit multiplier:

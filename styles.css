@@ -1,7 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;600&display=swap');
+
 /* Tighten up the body text for a blog-post feel */
 body {
+  font-family: 'Lora', Georgia, serif;
   font-size: 1.05rem;
   line-height: 1.75;
+}
+
+/* Keep headings and UI elements sans-serif */
+h1, h2, h3, h4, h5, h6,
+.navbar, .sidebar, .toc,
+table, .callout {
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 h1.title {
