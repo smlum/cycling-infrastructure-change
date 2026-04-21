@@ -58,3 +58,24 @@ figcaption, .figure-caption {
 pre.sourceCode {
   font-size: 0.82rem;
 }
+
+/* Side-by-side photo pair — crops both images to the same height */
+.photo-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.photo-pair figure {
+  margin: 0;
+}
+
+.photo-pair img {
+  width: 100% !important;
+  height: 260px !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  border-radius: 4px;
+  display: block;
+}

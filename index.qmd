@@ -48,53 +48,46 @@ It's not an official release and should not be cited as such. ✌️
 
 ## 🚲 Intro
 
-Bike infrastructure is one of the cheapest ways a city can
-expand who can get around — but only one kind actually works.
+Cycling is one of the cheapest ways a city can expand mobility — 
+but only if people feel safe using it.
 
-Painted lanes on busy roads do almost nothing for ridership —
-[the research on this is settled](https://doi.org/10.1016/j.tbs.2023.100736){target="_blank"}.
-What moves the needle is **high-comfort** infrastructure:
+Painted lanes on busy roads do very little for overall ridership.
+[The research on this is settled](https://doi.org/10.1080/15568318.2026.2649315){target="_blank"} -
+what moves the needle is **high-comfort infrastructure**:
 physically separated cycle tracks, multi-use paths, and local street 
-bikeways. Places where you don't have to negotiate with a moving car.
+bikeways. Places where you don't have to negotiate with a fast moving car.
 
-Between 2019 and 2024, Canadian cities added hunfreds of kilometres
+Between 2019 and 2024, Canadian cities added hundreds of kilometres
 of cycling infrastructure. Not all of it was equal.
 
-Using the
-**[Canadian Cycling Network Database](https://www150.statcan.gc.ca/n1/pub/23-26-0004/232600042024001-eng.htm){target="_blank"}**
-and the **[Can-BICS](https://www.canada.ca/en/public-health/services/reports-publications/health-promotion-chronic-disease-prevention-canada-research-policy-practice/vol-40-no-9-2020/canbics-classification-system-naming-convention-cycling-infrastructure.html){target="_blank"}**
-classification framework,
+:::{.photo-pair}
+![A painted bike lane — a line of paint between you and moving trucks. Not very nice.](images/bike_bad.jpg)
+
+![A separated cycle track — physical barrier between cyclists and traffic. Much nicer!](images/bike_good.jpg)
+:::
+
+Using two national snapshots -
+a 2019 baseline **[cycling infrastructure dataset](https://health-infobase.canada.ca/datalab/bicycling-infrastructure.html){target="_blank"}**
+from the Public Health Agency and
+the 2024 **[Canadian Cycling Network Database](https://www150.statcan.gc.ca/n1/pub/23-26-0004/232600042024001-eng.htm){target="_blank"}**
+from Statistics Canada - 
 we measured how access to high-comfort infrastructure changed
 across three cities: Victoria, Montreal, and Toronto.
 
 **TL;DR:** Victoria punches way above its weight.
 Montreal has made real gains.
-Toronto has been.. sluggish, despite being 
-Canada's largest city.
+Toronto has been.. sluggish.
 
 ---
-
-## 📊 Data
-
-The analysis uses two national snapshots of Canadian cycling
-infrastructure:
-
-- **[2019](https://health-infobase.canada.ca/datalab/bicycling-infrastructure.html){target="_blank"}**
-  — baseline network, published by the Public Health Agency of Canada
-- **[2024](https://www150.statcan.gc.ca/n1/pub/23-26-0004/232600042024001-eng.htm){target="_blank"}**
-  — From Statistics Canada
-
-Each dataset is a collection of line segments — one per stretch of
-infrastructure — with attributes describing the type of facility.
 
 ---
 
 ## 🏷️ Classification is hard
 
-Here's a problem that doesn't get enough air time in cycling research:
+Here's a problem that doesn't get sufficient air time in cycling research:
 municipalities have wildly inconsistent names for their infrastructure.
 
-One city's "bike lane" is a 50cm wide painted stripe in the door zone.
+One city's "bike lane" is a 50cm wide faded stripe in the door zone.
 Another's is a fully protected cycle track with a physical barrier.
 
 This matters because the raw data reflects whatever label
@@ -106,53 +99,18 @@ not a consistent description of what was actually built.
 
 ### How we resolved it
 
-We used **[Can-BICS](URL_TODO){target="_blank"}**
+We used **[Can-BICS](https://www.canada.ca/en/public-health/services/reports-publications/health-promotion-chronic-disease-prevention-canada-research-policy-practice/vol-40-no-9-2020/canbics-classification-system-naming-convention-cycling-infrastructure.html){target="_blank"}**
 (Canadian Bikeway Comfort and Safety) as a common framework.
 Can-BICS classifies cycling infrastructure into three comfort tiers
 based on physical separation from motor traffic:
 *high*, *medium*, and *low*.
 This analysis focuses on the high-comfort tier —
 the facilities with genuine physical separation
-that [research shows actually shift ridership](URL_TODO){target="_blank"}.
+that [research shows actually shift ridership](https://doi.org/10.1186/s12966-025-01767-y){target="_blank"}.
 
 To apply Can-BICS consistently, we verified classifications
 using **Google Street View**, checking ambiguous segments
 in each city against what was actually on the ground.
-
-```{python}
-#| label: raw-counts
-#| tbl-cap: "Total and high-comfort kilometres by city and year. High-comfort includes cycle tracks, bike paths, and local street bikeways."
-
-raw = pd.read_csv(DATA / "city_lengths.csv").fillna(0)
-
-HC_TYPES = ["Cycle Track", "Bike Path", "Local Street Bikeway"]
-
-rows = []
-for _, row in raw.iterrows():
-    for year in [2019, 2024]:
-        hc = sum(row.get(f"{t} {year}", 0) for t in HC_TYPES)
-        total = row[f"Total {year}"]
-        rows.append({
-            "City":             row["Municipality"],
-            "Year":             year,
-            "Total km":         total,
-            "High-comfort km":  hc,
-            "% High-comfort":   100 * hc / total if total > 0 else 0,
-        })
-
-summary = pd.DataFrame(rows).sort_values(["City", "Year"]).reset_index(drop=True)
-
-summary.style \
-    .format({
-        "Year":            "{:.0f}",
-        "Total km":        "{:.0f}",
-        "High-comfort km": "{:.0f}",
-        "% High-comfort":  "{:.0f}%",
-    }) \
-    .set_properties(**{"text-align": "right"}) \
-    .set_table_styles([{"selector": "th", "props": [("text-align", "left")]}]) \
-    .hide(axis="index")
-```
 
 ---
 
@@ -273,11 +231,10 @@ city rankings are consistent across all three distances.
 Victoria is the smallest city in this analysis.
 It also has the most dramatic trajectory.
 
-<!-- TODO: populate with real numbers once analysis runs -->
 
 Between 2019 and 2024, the share of Victoria residents within 300 m
-of high-comfort infrastructure rose from **[X]% to [Y]%** —
-a gain of **[Z] percentage points**.
+of high-comfort infrastructure rose from **4.8% to 75.6%** —
+a gain of **70.8 percentage points**.
 Per capita, nothing else here comes close.
 
 Much of the story is *conversion*, not just addition.
@@ -359,8 +316,8 @@ Montreal has the largest absolute high-comfort network of the three cities.
 And it kept growing.
 
 Between 2019 and 2024, population-weighted access rose from
-**[X]% to [Y]%**.
-In raw kilometres, Montreal's gains dwarf Victoria's.
+**64.0% to 69.2%** — a smaller percentage-point gain than Victoria,
+but from a much higher base, and across a city of 1.6 million.
 
 Central to this: the **REV** — Réseau Express Vélo.
 A set of high-frequency protected lanes built explicitly as
@@ -416,12 +373,12 @@ New cycle tracks appeared along key corridors,
 and the city made genuine additions to its high-comfort network.
 
 But for a city of 2.7 million, the population-weighted numbers
-tell a more modest story: access moved from **[X]% to [Y]%** —
-roughly **[Z] percentage points**.
+tell a more modest story: access moved from **8.9% to 16.1%** —
+roughly **7.2 percentage points**.
 
 ```{python}
 #| label: toronto-map
-#| fig-cap: "Toronto cycling network, 2019 vs 2024. Orange: high-comfort. Red: lower-comfort. New protected lanes visible along key inner-city corridors."
+#| fig-cap: "Toronto cycling network, 2019 vs 2024. Blue: high-comfort. Red: lower-comfort. New protected lanes visible along key inner-city corridors."
 #| out-width: 100%
 #| fig-dpi: 96
 
@@ -455,40 +412,83 @@ plt.savefig(FIGS / "toronto_map.png", dpi=96, bbox_inches="tight")
 plt.show()
 ```
 
-The infrastructure that got built matters.
-The gap is in what didn't — routes that were planned,
-then deferred, reduced, or removed under political pressure.
-The data reflects both.
-
 ---
 
 ### The divergence
 
+The gap between cities is the real story.
+Routes planned, deferred, reduced, or removed under political pressure
+don't show up as additions — but they show up in the numbers.
+
 ```{python}
 #| label: divergence
-#| fig-cap: "Population-weighted access to high-comfort cycling infrastructure, 2019 and 2024, by city. Lines connect the same city across years."
+#| fig-cap: "Population-weighted share of residents within 300 m of high-comfort cycling infrastructure, 2019 and 2024. Dots sized by 2021 population."
+#| out-width: 100%
+#| fig-dpi: 120
 
-# TODO: replace with actual values once access results are computed
-# results = pd.read_csv(DATA / "access_results.csv")
+from matplotlib.transforms import blended_transform_factory
 
-fig, ax = plt.subplots(figsize=(6, 5))
-ax.text(0.5, 0.5, "Populate with real data\n(scripts/02_compute_access.py)",
-        ha="center", va="center", fontsize=13, color="#888", transform=ax.transAxes)
-ax.axis("off")
-ax.set_title("The gap is widening — placeholder", color="#aaa")
+access = pd.read_csv(DATA / "access.csv")
+# Plot order: Victoria top, Montreal middle, Toronto bottom
+order = ["Victoria", "Montreal", "Toronto"]
+access["_ord"] = access["Municipality"].map({c: i for i, c in enumerate(reversed(order))})
+access = access.sort_values("_ord").reset_index(drop=True)
+
+fig, ax = plt.subplots(figsize=(8, 3.5))
+
+for idx, row in access.iterrows():
+    # Grey connector
+    ax.plot([row["% nearby access 2019"], row["% nearby access 2024"]],
+            [idx, idx], color="#e0e0e0", linewidth=6, solid_capstyle="round", zorder=1)
+    # Arrow tip to show direction
+    dx = row["% nearby access 2024"] - row["% nearby access 2019"]
+    ax.annotate("", xy=(row["% nearby access 2024"], idx),
+                xytext=(row["% nearby access 2019"], idx),
+                arrowprops=dict(arrowstyle="-|>", color="#bdbdbd", lw=0), zorder=1)
+
+# 2019 dots
+ax.scatter(access["% nearby access 2019"], range(len(access)),
+           color="#90CAF9", s=120, zorder=3, label="2019")
+# 2024 dots
+ax.scatter(access["% nearby access 2024"], range(len(access)),
+           color="#1565C0", s=120, zorder=3, label="2024")
+
+# Value labels
+for idx, row in access.iterrows():
+    ax.text(row["% nearby access 2019"] - 1.5, idx, f"{row['% nearby access 2019']:.0f}%",
+            ha="right", va="center", fontsize=9, color="#90CAF9")
+    ax.text(row["% nearby access 2024"] + 1.5, idx, f"{row['% nearby access 2024']:.0f}%",
+            ha="left", va="center", fontsize=9, color="#1565C0")
+
+# Population labels on far right
+trans = blended_transform_factory(ax.transAxes, ax.transData)
+for idx, row in access.iterrows():
+    ax.text(1.02, idx, f"{int(row['Population (2021)']):,}",
+            va="center", fontsize=9, color="#999", transform=trans)
+ax.text(1.02, len(access) - 0.55, "Pop. (2021)",
+        fontsize=9, color="#999", fontweight="bold", transform=trans)
+
+ax.set_yticks(range(len(access)))
+ax.set_yticklabels(access["Municipality"], fontsize=11)
+ax.set_xlim(-2, 100)
+ax.set_xticks(range(0, 101, 20))
+ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}%"))
+ax.set_xlabel("Residents within 300 m of high-comfort infrastructure", labelpad=10, fontsize=10)
+
+ax.spines["top"].set_visible(False)
+ax.spines["right"].set_visible(False)
+ax.spines["left"].set_visible(False)
+ax.spines["bottom"].set_visible(False)
+ax.grid(axis="x", alpha=0.25, linestyle="--")
+ax.tick_params(axis="y", length=0)
+
+ax.legend(loc="lower right", fontsize=9, frameon=False)
+
 plt.tight_layout()
+plt.subplots_adjust(right=0.85)
+plt.savefig(FIGS / "divergence.png", dpi=120, bbox_inches="tight")
 plt.show()
 ```
-
-| City | 2019 | 2024 | Change |
-|------|------|------|--------|
-| Victoria | —% | —% | +— pp |
-| Montreal | —% | —% | +— pp |
-| Toronto  | —% | —% | +— pp |
-
-: Population-weighted access to high-comfort cycling infrastructure.
-Percentage of residents within 300 m of a high-comfort segment.
-{#tbl-results}
 
 ---
 
@@ -525,28 +525,3 @@ without a real change in what actually gets built.
 
 ---
 
-## Appendix: data and code
-
-All analysis code is in the `scripts/` directory.
-
-1. `scripts/01_load_data.py` — load and classify CCND shapefiles
-2. `scripts/02_compute_access.py` — compute DB-level access indicators
-3. `scripts/03_make_figures.py` — generate maps and export figures
-
-```{python}
-#| label: session-info
-#| tbl-cap: "Python package versions used in this analysis."
-#| code-fold: true
-
-import importlib.metadata
-
-pkgs = ["geopandas", "pandas", "matplotlib", "contextily", "shapely", "numpy"]
-rows = []
-for pkg in pkgs:
-    try:
-        rows.append({"Package": pkg, "Version": importlib.metadata.version(pkg)})
-    except importlib.metadata.PackageNotFoundError:
-        rows.append({"Package": pkg, "Version": "not installed"})
-
-pd.DataFrame(rows).style.hide(axis="index")
-```
