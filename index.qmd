@@ -233,9 +233,9 @@ It also has the most dramatic trajectory.
 
 
 Between 2019 and 2024, the share of Victoria residents within 300 m
-of high-comfort infrastructure rose from **4.8% to 75.6%** —
-a gain of **70.8 percentage points**.
-Per capita, nothing else here comes close.
+of high-comfort infrastructure rose from **5% to 76%** —
+a gain of **71 percentage points**.
+Per capita, nothing else came close.
 
 Much of the story is *conversion*, not just addition.
 Victoria upgraded painted bike lanes to protected cycle tracks,
@@ -310,18 +310,18 @@ plt.show()
 
 ---
 
-### 🥯 Montreal: real gains, real network
+### 🥯 Montreal: sustained growth
 
 Montreal has the largest absolute high-comfort network of the three cities.
 And it kept growing.
 
 Between 2019 and 2024, population-weighted access rose from
-**64.0% to 69.2%** — a smaller percentage-point gain than Victoria,
+**64% to 69%** — a smaller percentage-point gain than Victoria,
 but from a much higher base, and across a city of 1.6 million.
 
-Central to this: the **REV** — Réseau Express Vélo.
-A set of high-frequency protected lanes built explicitly as
-cycling rapid transit, not recreational paths. That framing matters.
+Central to this was the **REV** — Réseau Express Vélo.
+A set of connected and protected lanes built explicitly as
+cycling rapid transit, not just recreational paths. This framing matters.
 
 ```{python}
 #| label: montreal-map
@@ -359,22 +359,22 @@ plt.savefig(FIGS / "montreal_map.png", dpi=96, bbox_inches="tight")
 plt.show()
 ```
 
-The catch: Montreal is large and uneven.
-Gains have concentrated in the central plateau and downtown.
-Outer arrondissements have seen much less.
-The city-wide number is real, but it masks a lot of geography.
+Montreal is large and uneven.
+Gains have concentrated in the central plateau, whereas
+outer arrondissements have seen less attention.
+The city-wide number is still a winner, but it masks some uneven geography.
 
 ---
 
-### 🚧 Toronto: real progress, uneven delivery
+### 🚧 Toronto: measured progress
 
-Toronto did build during this period.
+Toronto did do significant work during this period.
 New cycle tracks appeared along key corridors,
 and the city made genuine additions to its high-comfort network.
 
 But for a city of 2.7 million, the population-weighted numbers
-tell a more modest story: access moved from **8.9% to 16.1%** —
-roughly **7.2 percentage points**.
+tell a more modest story: access moved from **9% to 16%** —
+roughly **7 percentage points**.
 
 ```{python}
 #| label: toronto-map
@@ -416,13 +416,13 @@ plt.show()
 
 ### The divergence
 
-The gap between cities is the real story.
-Routes planned, deferred, reduced, or removed under political pressure
-don't show up as additions — but they show up in the numbers.
+Every city moved in the right direction.
+But the scale of ambition varied enormously —
+and that shows up clearly in the numbers.
 
 ```{python}
 #| label: divergence
-#| fig-cap: "Population-weighted share of residents within 300 m of high-comfort cycling infrastructure, 2019 and 2024. Dots sized by 2021 population."
+#| fig-cap: "Population-weighted share of residents within 300 m of high-comfort cycling infrastructure, 2019 and 2024. Population is from the 2021 census."
 #| out-width: 100%
 #| fig-dpi: 120
 
@@ -494,34 +494,15 @@ plt.show()
 
 ## 🔍 Conclusion
 
-This isn't a story about resources or city size.
-It's about political choices.
+These results are, on balance, encouraging.
 
-Victoria and Montreal built the kind of infrastructure
-the evidence says works. Toronto made progress —
-but the scale of what's needed still outpaces what got delivered.
+Victoria shows what rapid, focused investment can achieve in a smaller city —
+three-quarters of residents reached in five years, from a near-zero base.
+Montreal shows what sustained commitment looks like across a large city
+and successive administrations: steady gains, compounding over time.
 
-That matters beyond cycling mode share.
-High-comfort networks are a transit multiplier:
-
-- 🚌 **They extend the walkshed** around transit stops —
-  critical for first/last mile in medium-density areas
-  where bus frequency alone can't close the gap
-- 📉 **They reduce peak-hour vehicle pressure**
-  on commute corridors
-- 🙋 **They reach new riders** — people who won't ride on
-  painted lanes but will ride on protected ones.
-  That's the mechanism behind modal shift.
-
-The CCND will be updated again.
-When it is, the question is whether the gap
-between cities like Victoria and Montreal
-and cities like Toronto has kept widening —
-or whether the laggards have finally started catching up.
-
-Based on what this analysis shows,
-there's no reason to expect catch-up
-without a real change in what actually gets built.
+Both are templates. National cycling data will be updated again in 2026,
+and the question is whether other cities have started to follow them.
 
 ---
 
